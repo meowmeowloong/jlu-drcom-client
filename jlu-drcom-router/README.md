@@ -24,7 +24,7 @@
 请按下面的顺序带我操作，每一步等我做完并确认后再继续：
 1. 用 XMiR-Patcher 免刷机开启路由器 SSH（先提醒我风险和备份）
 2. 在 Windows 里启用 WSL，下载 musl 交叉工具链 arm-linux-musleabi-cross
-3. 编译仓库里的静态二进制（sh jlu-drcom-router/scripts/build.sh，产物 bin/jlu-drcom-armv7）
+3. （可选）编译仓库里的静态二进制（sh jlu-drcom-router/scripts/build.sh，产物 bin/jlu-drcom-armv7）
 4. 用 scp -O 把二进制传到路由器 /data/drcom/，然后运行 jlu-drcom-router/scripts/install.sh
 5. 配置放在 /data/drcom/drcom.conf（注意：配置绝对不能放 /etc，原厂固件重启会清空 /etc）
 6. 设置 crontab 每分钟守护，最后教我怎么在日志里确认"登录成功"
