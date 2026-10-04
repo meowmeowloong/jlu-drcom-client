@@ -19,7 +19,7 @@
  *   server    10.100.61.3
  *   username  你的学号
  *   password  你的密码
- *   mac       11:22:33:44:55:66   # 可选，账号绑定的 MAC；留空/0 表示不校验 MAC
+ *   mac       11:22:33:44:55:66   # 网络中心绑定的 MAC（吉大必填，同时 WAN 口要克隆成它）
  *   host_name JLU-DrCOM           # 可选，主机名
  */
 

@@ -13,7 +13,7 @@
 #
 # 注意：本文件必须保存为 UTF-8 with BOM，否则 PowerShell 5.1 会把中文注释按 GBK
 # 解析导致脚本直接报错退出（2026-10-04 实测踩坑）。
-# 以下参数为本机实测值（2026-10-04）。换电脑/换端口/学校改分配时需要对应修改。
+# 以下参数是占位示例：换成你分配到的 MAC/IP/网关和本机网卡编号后再运行。
 
 param([Parameter(Mandatory=$true)][ValidateSet('takeover','restore')][string]$mode)
 
@@ -22,10 +22,10 @@ param([Parameter(Mandatory=$true)][ValidateSet('takeover','restore')][string]$mo
 $ErrorActionPreference = 'Continue'
 Start-Transcript -Path "$env:TEMP\laptop-direct-last-run.log" -Force
 
-$idx     = 3                      # 有线网卡（Realtek PCIe GbE），用 Get-NetAdapter 确认
-$wlanIdx = 4                      # WLAN 网卡（作备用线路）
+$idx     = 3                      # 有线网卡编号，用 Get-NetAdapter 查看后填
+$wlanIdx = 4                      # WLAN 网卡编号（作备用线路）
 $mac     = '11-22-33-44-55-66'    # 校园网绑定的 MAC（路由器 WAN 克隆的就是它）
-$origMac = '40-C2-BA-44-FD-F3'    # 笔记本有线网卡原 MAC
+$origMac = 'AA-BB-CC-DD-EE-F0'    # 本机有线网卡原 MAC（先 Get-NetAdapter 记下来，restore 要用）
 $ip      = '10.9.8.7'             # 学校分配的静态 IP（/24）
 $gw      = '10.9.8.254'           # 网关
 $authSrv = '10.100.61.3'          # DrCOM 认证服务器

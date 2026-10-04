@@ -44,3 +44,6 @@ jlu-drcom-win-QT/release/
 
 # Qt 构建目录
 jlu-drcom-win-QT/build-mingw/
+
+# Qt 工具链下载日志（本机构建噪音，不入库）
+jlu-drcom-win-QT/src/aqtinstall.log

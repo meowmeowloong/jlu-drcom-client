@@ -47,7 +47,7 @@ FAILED=0
 run_case "8位密码"        testuser test1234          001122334455 61442
 run_case "10位密码(JLU)"  testuser test123456        001122334455 61443
 run_case "16位密码(JLU)"  testuser test123456789012  001122334455 61444
-run_case "无MAC校验"      testuser test1234          000000000000 61445
+run_case "MAC全0"      testuser test1234          000000000000 61445
 
 echo
 if [ "$FAILED" = "0" ]; then
