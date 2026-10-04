@@ -1,0 +1,43 @@
+# 账号密码配置文件（敏感信息）
+accounts.ini
+Login.ini
+drcom.conf
+*.local.properties
+
+# 构建输出
+*.apk
+*.exe
+*.dll
+*.obj
+*.o
+*.pdb
+*.ilk
+*.exp
+
+# 注: jlu-drcom-router/bin/jlu-drcom-aarch64 是路由器版成品，
+#     与仓库里其他客户端一样直接入库，方便直接 scp 到路由器使用。
+
+# IDE
+.idea/
+*.iml
+.vs/
+*.suo
+*.user
+*.ncb
+*.sdf
+
+# Android
+local.properties
+
+# 客户端运行日志
+*.lgt
+
+# 第三方工具源码（XMiR-Patcher，开 SSH 用，来源见 jlu-drcom-router/README.md）
+xmir-patcher-main/
+
+# Python 缓存
+__pycache__/
+*.pyc
+
+# 客户端部署目录（含运行日志与本机二进制，本地产物不入库；预编译走 GitHub Releases）
+jlu-drcom-win-QT/release/

@@ -1,0 +1,30 @@
+# JLU DrCOM 路由器客户端配置文件（模板）
+#
+# 用法: 复制成 drcom.conf 再填账号密码
+#     cp etc/drcom.conf.example etc/drcom.conf
+#   （drcom.conf 已被 .gitignore 忽略，不会误把密码提交到仓库）
+#
+# 安装时会自动放到路由器的 /data/drcom/drcom.conf（/data 是持久分区，重启不丢；
+# 不要放 /etc —— 原厂固件重启会清空 /etc，导致客户端起不来）
+# 支持 # 注释，key = value 或 key value 两种写法
+
+# 认证服务器（JLU 固定为 10.100.61.3，一般不用改）
+server    10.100.61.3
+
+# 你的校园网账号（学号）
+username  在这里填你的学号
+
+# 你的校园网密码
+password  在这里填你的密码
+
+# 账号绑定的 MAC 地址（可选）
+#   - 如果你的账号没有绑定 MAC，或不确定，就保持下面这个 0（表示不校验）
+#   - 如果网络中心绑定了你某台设备的 MAC，填那个 MAC，格式 aa:bb:cc:dd:ee:ff
+#   - 注意：通常还需要把路由器的 WAN 口 MAC 克隆成这个 MAC（见 README 的说明）
+mac       0
+
+# 主机名（可选，一般不用改）
+host_name JLU-DrCOM
+
+# 调试开关：设为 1 会在日志里打印每个报文（排查问题时再用，平时保持 0）
+debug     0

@@ -1,0 +1,7 @@
+// Custom resource file: app icon + elevation manifest.
+// NOTE: asset paths are resolved by windres relative to the BUILD directory
+// (qmake runs windres with cwd = build dir), hence the ../ prefixes.
+#include <windows.h>
+
+IDI_ICON1 ICON DISCARDABLE "../images/icon.ico"
+1 24 "../src/app.manifest"
