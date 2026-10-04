@@ -34,6 +34,7 @@ struct DirectParams {
 	QString gw       = "10.9.8.254";           // 占位符：网关
 	QString dns1     = "223.5.5.5";
 	QString dns2     = "119.29.29.29";
+	int     prefix   = 24;
 	DirectParams() {
 		QSettings s(SETTINGS_FILE_NAME);
 		wiredIdx = s.value("direct/wiredIdx", wiredIdx).toInt();
@@ -44,6 +45,7 @@ struct DirectParams {
 		gw       = s.value("direct/gw",       gw      ).toString();
 		dns1     = s.value("direct/dns1",     dns1    ).toString();
 		dns2     = s.value("direct/dns2",     dns2    ).toString();
+		prefix   = s.value("direct/prefix",   prefix  ).toInt();
 	}
 };
 static const DirectParams &P()
@@ -159,8 +161,8 @@ bool DirectMode::takeover()
 					  " -Confirm:$false -ErrorAction SilentlyContinue").arg(P().wiredIdx));
 		runPS(QString("Remove-NetIPAddress -InterfaceIndex %1 -AddressFamily IPv4 -Confirm:$false"
 					  " -ErrorAction SilentlyContinue").arg(P().wiredIdx));
-		if (!runPS(QString("New-NetIPAddress -InterfaceIndex %1 -IPAddress %2 -PrefixLength 24"
-						   " -DefaultGateway %3").arg(P().wiredIdx).arg(P().ip).arg(P().gw))) {
+		if (!runPS(QString("New-NetIPAddress -InterfaceIndex %1 -IPAddress %2 -PrefixLength %4"
+						   " -DefaultGateway %3").arg(P().wiredIdx).arg(P().ip).arg(P().gw).arg(P().prefix))) {
 			qDebug() << "[DirectMode] New-NetIPAddress failed, will retry";
 		}
 		QThread::sleep(6);

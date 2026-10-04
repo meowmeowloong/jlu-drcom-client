@@ -9,7 +9,7 @@
 | 目录 / 文件 | 说明 |
 | --- | --- |
 | `jlu-drcom-router/` | **红米路由器客户端**（不刷机、原厂固件塞静态二进制；含笔记本直连方案） |
-| `jlu-drcom-win-QT/` | **Windows 桌面客户端**（Qt6；v1.0.0.7 起内置「直连模式」） |
+| `jlu-drcom-win-QT/` | **Windows 桌面客户端**（Qt6；v1.0.0.8 起内置「直连模式」，参数直接在窗口里填） |
 | `jlu-drcom-py/` | Python 参考实现（`newclient.py` / `client.py`） |
 | `jlu-drcom-for_openWRT/` | OpenWRT 版本（legacy） |
 | `jlu-drcom-luci/` | OpenWRT LuCI 界面插件 |
@@ -25,16 +25,17 @@
 - 原理与操作指南：[jlu-drcom-router/操作指南与原理解析报告.md](jlu-drcom-router/操作指南与原理解析报告.md)
 - 开启 SSH 的第三方工具 XMiR-Patcher 不在仓库内，按路由器 README 中的链接下载
 
-## Windows 客户端直连模式（v1.0.0.7）
+## Windows 客户端直连模式（v1.0.0.8）
 
 宿舍有线网通常是**静态分配**（绑定 MAC + 固定 IP + 网关，无 DHCP），且身份与路由器
-共用。Windows 客户端 v1.0.0.7 起内置「直连模式」：
+共用。Windows 客户端内置「直连模式」：**在学校分配的参数基础上，替你完成网卡配置 +
+认证两件事**，不用再手动改网卡的 IPv4 属性。
 
-- 登录界面勾选 **「直连模式（接管校园网身份）」** → 重启客户端（需要管理员权限）→ 登录；
+- 登录窗口「直连模式」分组里填：绑定 MAC（上方 MAC 栏选 custom）、IP、掩码位、网关、DNS、网卡号；
+- 勾选「登录时自动配置网卡并接管身份」→ 重启客户端（需要管理员权限）→ 登录；
 - 客户端自动完成：克隆绑定 MAC、配静态 IP/网关/DNS、加认证服务器 /32 路由、WLAN 降为备用；
 - 退出客户端自动还原网络配置；崩溃残留下次启动自动清理；
-- 校园网参数（MAC/IP/网关等）在注册表 `HKCU\Software\DrCOM_JLU_Qt\OrganizationDefaults\direct` 下配置，
-  键与默认占位符见 [jlu-drcom-win-QT/README.md](jlu-drcom-win-QT/README.md)。
+- 详细字段说明和 AI 带装提示词：[jlu-drcom-win-QT/README.md](jlu-drcom-win-QT/README.md)
 
 **铁律：直连模式与路由器不能同时在线**（同一个 MAC + 同一个 IP，冲突后两条线路一起断）。
 
@@ -109,7 +110,7 @@ mac = 0x888888888888 #网络中心上注册时IP对应的MAC
 
 | 资产 | 说明 |
 | --- | --- |
-| `DrCOM_JLU_Qt_v1.0.0.7_direct.zip` | Windows 客户端（含 Qt 运行库，解压即用；直连参数需自行配置） |
+| `DrCOM_JLU_Qt_v1.0.0.8_direct.zip` | Windows 客户端（含 Qt 运行库，解压即用；直连参数在窗口里填） |
 | `jlu-drcom-armv7` / `jlu-drcom-aarch64` | 路由器静态二进制（scp 到路由器后 `chmod +x`） |
 
 ## 免责声明

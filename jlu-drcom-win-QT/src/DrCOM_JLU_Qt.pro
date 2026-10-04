@@ -70,7 +70,7 @@ RESOURCES += \
 include(singleinstance/singleapplication.pri)
 DEFINES += QAPPLICATION_CLASS=QApplication
 
-VERSION = 1.0.0.7
+VERSION = 1.0.0.8
 
 win32:LIBS += -lwsock32
 win32:LIBS += -lcrypt32
@@ -90,3 +90,5 @@ win32:LIBS += -lole32
 # v 1.0.0.7 新增直连模式：勾选后重启客户端（请求管理员权限），登录前自动接管校园网身份
 #           （克隆绑定MAC+静态IP+认证服务器/32路由+WLAN降为备用），退出时自动还原，
 #           崩溃残留下次启动自动清理。用于宿舍有线静态分配网+路由器断电场景，免外部脚本
+# v 1.0.0.8 直连参数改为登录窗口内直接填写（IP/掩码/网关/DNS/网卡号），不再需要改注册表；
+#           掩码位数可配；其余不变

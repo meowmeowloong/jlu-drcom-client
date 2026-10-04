@@ -8,6 +8,36 @@
 
 ---
 
+## 让 AI 手把手带你装（不想看文档？）
+
+把下面整段提示词复制给任意 AI 助手（豆包 / ChatGPT / Kimi…），它会一步步带你完成全部安装：
+
+```
+请扮演一位熟悉校园网和 OpenWrt 的网络工程师，带我在宿舍完成"路由器自动认证校园网"。
+我的情况：
+- 学校：吉林大学，认证方式 DrCOM，认证服务器 10.100.61.3，端口 61440
+- 路由器：红米 AX3000（RA81），保留原厂 MiWiFi 固件，绝不刷机
+- 我手上有一台 Windows 电脑（可以装 WSL）
+- 我已经从学校网络中心拿到：校园网账号、密码，以及绑定好的 MAC
+- 项目仓库：https://github.com/zf-666888/jlu-drcom-client （用 jlu-drcom-router 目录）
+
+请按下面的顺序带我操作，每一步等我做完并确认后再继续：
+1. 用 XMiR-Patcher 免刷机开启路由器 SSH（先提醒我风险和备份）
+2. 在 Windows 里启用 WSL，下载 musl 交叉工具链 arm-linux-musleabi-cross
+3. 编译仓库里的静态二进制（sh jlu-drcom-router/scripts/build.sh，产物 bin/jlu-drcom-armv7）
+4. 用 scp -O 把二进制传到路由器 /data/drcom/，然后运行 jlu-drcom-router/scripts/install.sh
+5. 配置放在 /data/drcom/drcom.conf（注意：配置绝对不能放 /etc，原厂固件重启会清空 /etc）
+6. 设置 crontab 每分钟守护，最后教我怎么在日志里确认"登录成功"
+
+要求：所有命令都给我可以直接复制执行的版本；涉及账号密码的步骤提醒我别截图发群；
+我贴报错时直接给修复命令，不要让我自己去搜。
+```
+
+装好之后哪天断了网，把路由器 `/data/drcom/drcom.log` 最后 30 行复制给 AI，
+让它对照下面「故障排查」一节的表格帮你判断原因。
+
+---
+
 ## 一、原理与风险（先读这段）
 
 | 方案                      | 做法                                              | 结果                            |

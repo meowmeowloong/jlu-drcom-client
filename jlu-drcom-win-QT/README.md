@@ -4,6 +4,28 @@
 v1.0.0.7 起内置**直连模式**：笔记本网线直连宿舍墙口时，客户端自动接管校园网身份并认证，
 退出时自动还原，无需任何外部脚本。
 
+## 让 AI 手把手带你配（不想看文档？）
+
+把下面整段复制给任意 AI 助手（豆包 / ChatGPT / Kimi…），它会一步步带你完成：
+
+```
+我在吉林大学宿舍，网线直连笔记本（没有路由器，或路由器断电了）。学校有线网是静态分配，
+我已在校园网办理了"绑定 MAC + 固定 IP"，拿到了这些信息，但不想在 Windows 网卡属性里手动配置。
+请带我使用这个开源客户端完成认证：
+https://github.com/zf-666888/jlu-drcom-client （jlu-drcom-win-QT 目录，Releases 页有打包好的 exe）
+
+要求：
+1. 指导我下载解压，并以管理员身份运行（程序要改网卡配置，需要管理员）
+2. 教我用 PowerShell 的 Get-NetAdapter 找到有线网卡和无线网卡的 ifIndex（接口编号）
+3. 在登录窗口"直连模式"分组里填参数：上方 MAC 栏选 custom 填绑定的 MAC；
+   IP/掩码位/网关/DNS 按学校分配的填；两个网卡号填刚查到的编号；
+   勾选"登录时自动配置网卡并接管身份"
+4. 点登录，等窗口下方显示出 IP 即成功；告诉我退出客户端时网卡配置会自动还原
+5. 如果失败，让我打开 exe 目录 logs 下最新的 .lgt 文件，把含 [DirectMode] 和 Critical
+   的行发给你分析原因
+注意：账号密码提醒我不要发到公开聊天记录里。
+```
+
 ## 功能
 
 - DrCOM JLU 协议完整实现：`challenge → login → keepalive_1 → keepalive_2` 循环保活
@@ -30,29 +52,20 @@ v1.0.0.7 起内置**直连模式**：笔记本网线直连宿舍墙口时，客�
 4. 退出客户端（托盘右键 → Quit）自动还原全部网络配置；
 5. 客户端崩溃/强杀留下的残留下次启动自动清理。
 
-**参数配置**：直连参数因人而异，源码里只有占位符。在注册表
-`HKCU\Software\DrCOM_JLU_Qt\OrganizationDefaults\direct`（子键）下设置：
+**参数配置**：全部在登录窗口的「直连模式」分组里直接填写，客户端会记住：
 
-| 值名 | 含义 | 示例（PowerShell） |
-| --- | --- | --- |
-| `mac` | 校园网绑定的 MAC | `11-22-33-44-55-66` |
-| `origMac` | 本机有线网卡原 MAC（还原用，留空跳过还原） | `AA-BB-CC-DD-EE-FF` |
-| `ip` | 学校分配的静态 IP | `10.9.8.7` |
-| `gw` | 网关 | `10.9.8.254` |
-| `dns1` / `dns2` | DNS | `223.5.5.5` / `119.29.29.29` |
-| `wiredIdx` | 有线网卡 ifIndex（`Get-NetAdapter` 查看） | `3` |
-| `wlanIdx` | 无线网卡 ifIndex（降为备用） | `4` |
+| 界面字段 | 填什么 |
+| --- | --- |
+| MAC（上方 MAC 栏） | 选 **custom**，填学校绑定的 MAC —— 认证报文和网卡克隆都用它 |
+| IP | 学校分配的静态 IP |
+| 掩码位 | 一般是 24（即 255.255.255.0） |
+| 网关 | 分配的网关 |
+| DNS1 / DNS2 | 可选，不填用系统默认 |
+| 网卡号（左） | 有线网卡 ifIndex，PowerShell `Get-NetAdapter` 查看 |
+| 网卡号（右） | 备用 WLAN 网卡 ifIndex（登录时自动降为备用线路） |
 
-PowerShell 示例：
-
-```powershell
-$p = 'HKCU:\Software\DrCOM_JLU_Qt\OrganizationDefaults\direct'
-New-Item -Path $p -Force | Out-Null
-Set-ItemProperty -Path $p -Name mac      -Value '11-22-33-44-55-66'
-Set-ItemProperty -Path $p -Name origMac  -Value 'AA-BB-CC-DD-EE-FF'
-Set-ItemProperty -Path $p -Name ip       -Value '10.9.8.7'
-Set-ItemProperty -Path $p -Name gw       -Value '10.9.8.254'
-```
+> 参数实际存储在注册表 `HKCU\Software\DrCOM_JLU_Qt\OrganizationDefaults\direct` 子键下，
+> 一般不用手动碰。原来"绑定 MAC 的原 MAC"也无需填写——首次接管时会自动记忆，用于退出还原。
 
 **铁律：直连模式与路由器不能同时在线**——同一个 MAC + 同一个 IP，冲突后两条线路一起断。
 路由器上电前先退出客户端。

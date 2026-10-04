@@ -95,6 +95,15 @@ MainWindow::MainWindow(SingleApplication *parentApp, QWidget *parent) :
 		QSettings s(SETTINGS_FILE_NAME);
 		s.setValue(ID_DIRECT_MODE, on);
 	});
+	// 直连参数（校园网分配的静态配置），直接在界面上填写并保存
+	QSettings ds(SETTINGS_FILE_NAME);
+	ui->editDirectIp->setText(ds.value("direct/ip").toString());
+	ui->editDirectGw->setText(ds.value("direct/gw").toString());
+	ui->editDirectDns1->setText(ds.value("direct/dns1").toString());
+	ui->editDirectDns2->setText(ds.value("direct/dns2").toString());
+	ui->spinWiredIdx->setValue(ds.value("direct/wiredIdx", 3).toInt());
+	ui->spinWlanIdx->setValue(ds.value("direct/wlanIdx", 4).toInt());
+	ui->spinPrefix->setValue(ds.value("direct/prefix", 24).toInt());
 
 	// 设置回调函数
 	dogcomController = new DogcomController();
@@ -346,6 +355,21 @@ void MainWindow::on_pushButtonLogin_clicked()
 	QSettings s0(SETTINGS_FILE_NAME);
 	qDebug() << "login clicked: directMode=" << s0.value(ID_DIRECT_MODE, false).toBool();
 	if (s0.value(ID_DIRECT_MODE, false).toBool()) {
+		// 界面上填写的直连参数先落盘（directmode 模块从这里读取）
+		s0.setValue("direct/ip",   ui->editDirectIp->text().trimmed());
+		s0.setValue("direct/gw",   ui->editDirectGw->text().trimmed());
+		s0.setValue("direct/dns1", ui->editDirectDns1->text().trimmed());
+		s0.setValue("direct/dns2", ui->editDirectDns2->text().trimmed());
+		s0.setValue("direct/wiredIdx", ui->spinWiredIdx->value());
+		s0.setValue("direct/wlanIdx",  ui->spinWlanIdx->value());
+		s0.setValue("direct/prefix",   ui->spinPrefix->value());
+		if (ui->editDirectIp->text().trimmed().isEmpty()
+			|| ui->editDirectGw->text().trimmed().isEmpty()) {
+			QMessageBox::warning(this, APP_NAME, tr("Direct mode needs IP and gateway!\nFill them in the direct-mode group."));
+			SetDisableInput(false);
+			CURR_STATE = STATE_OFFLINE;
+			return;
+		}
 		if (!DirectMode::isElevated()) {
 			QMessageBox::warning(this, APP_NAME, tr("Direct mode needs admin rights!\nRestart the app and allow the UAC prompt."));
 			SetDisableInput(false);

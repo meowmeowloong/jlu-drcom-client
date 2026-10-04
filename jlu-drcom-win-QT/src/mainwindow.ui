@@ -122,17 +122,136 @@
             </property>
            </widget>
           </item>
-          <item row="2" column="0" colspan="2">
-           <widget class="QCheckBox" name="checkBoxDirectMode">
-            <property name="text">
-             <string>直连模式（接管校园网身份）</string>
-            </property>
-            <property name="toolTip">
-             <string>仅当网线直连宿舍墙口（路由器断电）时勾选。勾选后重启客户端生效：启动时请求管理员权限，登录前自动接管身份，退出时自动还原。</string>
-            </property>
-           </widget>
-          </item>
          </layout>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="groupDirect">
+          <property name="title">
+           <string>直连模式（客户端代配网络）</string>
+          </property>
+          <layout class="QGridLayout" name="gridDirect">
+           <item row="0" column="0" colspan="2">
+            <widget class="QCheckBox" name="checkBoxDirectMode">
+             <property name="text">
+              <string>登录时自动配置网卡并接管身份</string>
+             </property>
+             <property name="toolTip">
+              <string>网线直连宿舍墙口时勾选：登录前把网卡 MAC 克隆成上方 MAC 栏填写的绑定 MAC、按下方参数配静态 IP/网关/DNS，并加认证服务器路由；退出客户端自动还原。与路由器不能同时在线。</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="0">
+            <widget class="QLabel" name="labelDirectIp">
+             <property name="text">
+              <string>IP</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QLineEdit" name="editDirectIp">
+             <property name="placeholderText">
+              <string>学校分配的 IP</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="0">
+            <widget class="QLabel" name="labelDirectGw">
+             <property name="text">
+              <string>网关</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="1">
+            <widget class="QLineEdit" name="editDirectGw">
+             <property name="placeholderText">
+              <string>分配的网关</string>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="0">
+            <widget class="QLabel" name="labelDirectDns">
+             <property name="text">
+              <string>DNS</string>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="1">
+            <layout class="QHBoxLayout" name="layoutDirectDns">
+             <item>
+              <widget class="QLineEdit" name="editDirectDns1">
+               <property name="placeholderText">
+                <string>DNS1（可选）</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLineEdit" name="editDirectDns2">
+               <property name="placeholderText">
+                <string>DNS2（可选）</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item row="4" column="0">
+            <widget class="QLabel" name="labelDirectIdx">
+             <property name="text">
+              <string>网卡号</string>
+             </property>
+            </widget>
+           </item>
+           <item row="4" column="1">
+            <layout class="QHBoxLayout" name="layoutDirectIdx">
+             <item>
+              <widget class="QSpinBox" name="spinWiredIdx">
+               <property name="toolTip">
+                <string>有线网卡 ifIndex（PowerShell 里 Get-NetAdapter 查看）</string>
+               </property>
+               <property name="minimum">
+                <number>1</number>
+               </property>
+               <property name="maximum">
+                <number>99</number>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QSpinBox" name="spinWlanIdx">
+               <property name="toolTip">
+                <string>备用 WLAN 网卡 ifIndex（登录时自动降为备用线路）</string>
+               </property>
+               <property name="minimum">
+                <number>1</number>
+               </property>
+               <property name="maximum">
+                <number>99</number>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item row="5" column="0">
+            <widget class="QLabel" name="labelDirectPrefix">
+             <property name="text">
+              <string>掩码位</string>
+             </property>
+            </widget>
+           </item>
+           <item row="5" column="1">
+            <widget class="QSpinBox" name="spinPrefix">
+             <property name="minimum">
+              <number>8</number>
+             </property>
+             <property name="maximum">
+              <number>32</number>
+             </property>
+             <property name="value">
+              <number>24</number>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
         </item>
         <item>
          <widget class="QPushButton" name="pushButtonLogin">

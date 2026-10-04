@@ -41,3 +41,6 @@ __pycache__/
 
 # 客户端部署目录（含运行日志与本机二进制，本地产物不入库；预编译走 GitHub Releases）
 jlu-drcom-win-QT/release/
+
+# Qt 构建目录
+jlu-drcom-win-QT/build-mingw/
