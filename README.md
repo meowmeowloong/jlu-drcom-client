@@ -11,7 +11,7 @@
 | 目录 / 文件 | 说明 |
 | --- | --- |
 | ★ `jlu-drcom-router/` | **红米路由器客户端**（不刷机、原厂固件塞静态二进制 |
-| ★ `jlu-drcom-win-QT/` | **Windows 桌面客户端**（Qt6；v1.0.0.8 起内置「直连模式」，断电后笔记本直连，不用路由器的读者也推荐日常使用这个客户端，参数直接在窗口里填更方便） |
+| ★ `jlu-drcom-win-QT/` | **Windows 桌面客户端**（Qt6；v1.0.0.9 起内置「直连模式」，断电后笔记本直连，不用路由器的读者也推荐日常使用这个客户端，参数直接在窗口里填更方便） |
 | `jlu-drcom-py/` | Python 参考实现（`newclient.py` / `client.py`） |
 | `jlu-drcom-for_openWRT/` | OpenWRT 版本（legacy） |
 | `jlu-drcom-luci/` | OpenWRT LuCI 界面插件 |
@@ -58,7 +58,7 @@ mac = 0x888888888888 #网络中心上注册时IP对应的MAC
 
 | 资产 | 说明 |
 | --- | --- |
-| `DrCOM_JLU_Qt_v1.0.0.8_direct.zip` | Windows 客户端（含 Qt 运行库，解压即用；直连参数在窗口里填） |
+| `DrCOM_JLU_Qt_v1.0.0.9_direct.zip` | Windows 客户端（含 Qt 运行库，解压即用；直连参数在窗口里填） |
 | `jlu-drcom-armv7` / `jlu-drcom-aarch64` | 路由器静态二进制（scp 到路由器后 `chmod +x`） |
 
 ## 免责声明

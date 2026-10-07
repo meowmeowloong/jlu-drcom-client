@@ -62,7 +62,7 @@ int main(int argc, char *argv[])
 {
 	// 直连模式：需要管理员权限改网络配置。
 	// 1) 开了直连模式但没提权 -> 以管理员重启自身；
-	// 2) 直连模式已关但上次接管后异常退出（崩溃/强杀）-> 提权清理网络配置残留。
+	// 2) directActive 残留（上次崩溃/强杀/接管中退出）-> 提权清理网络配置残留。
 	// 注意要在 SingleApplication 构造之前做，避免提权重启的实例变成"第二个实例"。
 	{
 		// 防御性护栏：提权重启出来的子进程带 --direct-elevated 标记，最多重启一次，
@@ -71,21 +71,20 @@ int main(int argc, char *argv[])
 		QSettings s0(SETTINGS_FILE_NAME);
 		const bool directMode   = s0.value(ID_DIRECT_MODE,   false).toBool();
 		const bool directActive = s0.value(ID_DIRECT_ACTIVE, false).toBool();
-		if (directMode && !relaunchedAlready && !DirectMode::isElevated()) {
-			qDebug() << "direct mode on but not elevated, relaunching as admin...";
+		if ((directMode || directActive) && !relaunchedAlready && !DirectMode::isElevated()) {
+			qDebug() << "direct mode on or leftover config present but not elevated, relaunching as admin...";
 			if (DirectMode::relaunchElevated())
 				return 0;
 			// UAC 被拒绝则按普通模式继续，登录时会提示需要管理员
 		}
-		if (!directMode && directActive) {
-			qDebug() << "leftover direct-mode config detected, restoring...";
-			if (!DirectMode::isElevated()) {
-				if (DirectMode::relaunchElevated())
-					return 0;
+		if (directActive) {
+			// v1.0.0.9：后台清理，不阻塞启动；与 directMode 开关无关——
+			// 标记为 true 只说明上次没有正常还原
+			qDebug() << "leftover direct-mode config detected, restoring in background...";
+			if (DirectMode::isElevated())
+				DirectMode::restoreAsync();
+			else
 				qDebug() << "cleanup needs admin, relaunch declined";
-			} else {
-				DirectMode::restore();
-			}
 		}
 	}
 

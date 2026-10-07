@@ -343,10 +343,10 @@ ror、MAC 异或等所有加密与校验逻辑都与已知可用的 C++ 客户�
 **铁律：笔记本和路由器不能同时在线。** 同一个 MAC + 同一个 IP 同时上 = 地址冲突，
 两条线路一起断。
 
-### 推荐方式：Windows 客户端内置直连模式（v1.0.0.8 起）
+### 推荐方式：Windows 客户端内置直连模式（v1.0.0.9 起）
 
-下载：[Release v1.0.0.8](https://github.com/zf-666888/jlu-drcom-client/releases/tag/v1.0.0.8)
-（`DrCOM_JLU_Qt_v1.0.0.8_direct.zip`，解压即用）。
+下载：[Release v1.0.0.9](https://github.com/zf-666888/jlu-drcom-client/releases/tag/v1.0.0.9)
+（`DrCOM_JLU_Qt_v1.0.0.9_direct.zip`，解压即用）。
 
 1. 把网络中心分配的参数填进登录窗口的「直连模式」一栏：**IP、掩码位（一般 24）、
    网关、DNS、有线网卡编号**（在 `ipconfig` / 设备管理器里看是第几块网卡）；

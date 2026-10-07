@@ -5,6 +5,8 @@
 #include <QSettings>
 #include <QThread>
 #include <QDebug>
+#include <QFile>
+#include <QStandardPaths>
 #include "constants.h"
 
 #ifdef Q_OS_WIN
@@ -82,6 +84,17 @@ static QString psOut(const QString &cmd)
 	return QString::fromLocal8Bit(p.readAllStandardOutput()).trimmed();
 }
 
+// 等网卡回到 Up 状态：在**一个** PowerShell 进程里轮询，最多 maxMs 毫秒，
+// 起来就提前返回（改 MAC 会触发网卡重启，之前是死等 12 秒，实际通常 3~5 秒就回来了）
+static void waitAdapterUpPS(int idx, int maxMs)
+{
+	runPS(QString("$t=[Diagnostics.Stopwatch]::StartNew(); "
+				  "while($t.ElapsedMilliseconds -lt %2){ "
+				  "if((Get-NetAdapter -InterfaceIndex %1 -ErrorAction SilentlyContinue).Status -eq 'Up'){break}; "
+				  "Start-Sleep -Milliseconds 400 }")
+			  .arg(idx).arg(maxMs));
+}
+
 bool DirectMode::isElevated()
 {
 #ifdef Q_OS_WIN
@@ -131,12 +144,18 @@ bool DirectMode::takeover()
 {
 	qDebug() << "[DirectMode] takeover: begin";
 
+	// 一开始就置位：接管进行中客户端若崩溃/被强杀，下次启动仍能识别残留并清理。
+	// （放在最后置位的话，接管到一半就退出 = 网络改了一半且无人认领）
+	QSettings sActive(SETTINGS_FILE_NAME);
+	sActive.setValue(ID_DIRECT_ACTIVE, true);
+
 	// 1. 克隆 MAC（改 MAC 会触发网卡重启，等它回来）
 	const QString curMac = psOut(QString("(Get-NetAdapter -InterfaceIndex %1).MacAddress").arg(P().wiredIdx));
 	if (curMac.compare(P().mac, Qt::CaseInsensitive) != 0) {
 		runPS(QString("Get-NetAdapter -InterfaceIndex %1 | Set-NetAdapter -MacAddress '%2' -Confirm:$false")
-				  .arg(P().wiredIdx).arg(P().mac));
-		QThread::sleep(12);
+					  .arg(P().wiredIdx).arg(P().mac));
+		// 改 MAC 会触发网卡重启：轮询等它回来（最多 12 秒，通常 3~5 秒）
+		waitAdapterUpPS(P().wiredIdx, 12000);
 	} else {
 		qDebug() << "[DirectMode] MAC already" << P().mac << ", skip cloning";
 	}
@@ -165,7 +184,7 @@ bool DirectMode::takeover()
 						   " -DefaultGateway %3").arg(P().wiredIdx).arg(P().ip).arg(P().gw).arg(P().prefix))) {
 			qDebug() << "[DirectMode] New-NetIPAddress failed, will retry";
 		}
-		QThread::sleep(6);
+		waitAdapterUpPS(P().wiredIdx, 6000);
 	}
 	runPS(QString("Set-DnsClientServerAddress -InterfaceIndex %1 -ServerAddresses '%2','%3'")
 			  .arg(P().wiredIdx).arg(P().dns1).arg(P().dns2));
@@ -181,38 +200,99 @@ bool DirectMode::takeover()
 	runPS(QString("Set-NetIPInterface -InterfaceIndex %1 -InterfaceMetric 5000 -ErrorAction SilentlyContinue")
 			  .arg(P().wlanIdx));
 
-	QSettings s(SETTINGS_FILE_NAME);
-	s.setValue(ID_DIRECT_ACTIVE, true);
 	qDebug() << "[DirectMode] takeover: done";
 	return true;
 }
 
+// ===== 还原脚本的各步骤合并成**一个** PowerShell 脚本 =====
+// 旧版 restore 在主线程里串行拉起 7 个 powershell 进程 + 死等 6 秒，
+// 退出时界面卡六七秒、托盘无响应。合并后：1 个进程，等待改成"轮询网卡回 Up"。
+// 脚本内容保持纯 ASCII——PS 5.1 会把无 BOM 的非 ASCII 按 GBK 解析导致报错。
+static QString buildRestoreScript()
+{
+	const DirectParams &p = P();
+	QString s;
+	s += "$ErrorActionPreference = 'SilentlyContinue'\n";
+	s += "Start-Transcript -Path \"$env:TEMP\\drcom-direct-restore.log\" -Force | Out-Null\n";
+	// 认证服务器 /32 主机路由
+	s += QString("Remove-NetRoute -DestinationPrefix %1/32 -Confirm:$false\n").arg(SERVER_IP);
+	if (!p.origMac.isEmpty()) {
+		// 还原原 MAC（会触发网卡重启）
+		s += QString("Get-NetAdapter -InterfaceIndex %1 | Set-NetAdapter -MacAddress '%2' -Confirm:$false\n")
+				 .arg(p.wiredIdx).arg(p.origMac);
+		// 轮询等网卡回来（最多 8 秒），别死等
+		s += QString("foreach($i in 1..16){ "
+					 "if((Get-NetAdapter -InterfaceIndex %1 -ErrorAction SilentlyContinue).Status -eq 'Up'){break}; "
+					 "Start-Sleep -Milliseconds 500 }\n").arg(p.wiredIdx);
+	} else {
+		s += "Start-Sleep -Seconds 1\n";
+	}
+	// 静态 IP 移除 + 恢复 DHCP/DNS + WLAN 恢复自动度量 + 网卡重启归位
+	s += QString("Remove-NetIPAddress -InterfaceIndex %1 -IPAddress %2 -Confirm:$false\n")
+			 .arg(p.wiredIdx).arg(p.ip);
+	s += QString("Set-NetIPInterface -InterfaceIndex %1 -Dhcp Enabled\n").arg(p.wiredIdx);
+	s += QString("Set-DnsClientServerAddress -InterfaceIndex %1 -ResetServerAddresses\n").arg(p.wiredIdx);
+	s += QString("Set-NetIPInterface -InterfaceIndex %1 -AutomaticMetric Enabled\n").arg(p.wlanIdx);
+	s += QString("Get-NetAdapter -InterfaceIndex %1 | Restart-NetAdapter\n").arg(p.wiredIdx);
+	s += "Stop-Transcript | Out-Null\n";
+	return s;
+}
+
+static QString writeRestoreScript()
+{
+	const QString path = QStandardPaths::writableLocation(QStandardPaths::TempLocation)
+							 + "/drcom-direct-restore.ps1";
+	QFile f(path);
+	if (f.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+		f.write("\xEF\xBB\xBF");   // UTF-8 BOM，防止 PS 5.1 误判编码
+		f.write(buildRestoreScript().toUtf8());
+	} else {
+		qDebug() << "[DirectMode] failed to write restore script:" << path;
+	}
+	return path;
+}
+
 bool DirectMode::restore()
 {
-	qDebug() << "[DirectMode] restore: begin";
+	qDebug() << "[DirectMode] restore: begin (single powershell process)";
 
-	runPS(QString("Remove-NetRoute -DestinationPrefix %1/32 -Confirm:$false -ErrorAction SilentlyContinue")
-			  .arg(SERVER_IP));
-	if (!P().origMac.isEmpty()) {
-		runPS(QString("Get-NetAdapter -InterfaceIndex %1 | Set-NetAdapter -MacAddress '%2' -Confirm:$false")
-				  .arg(P().wiredIdx).arg(P().origMac));
-		QThread::sleep(6);
-	} else {
-		qDebug() << "[DirectMode] direct/origMac not set, skip MAC revert";
-		QThread::sleep(2);
-	}
-	runPS(QString("Remove-NetIPAddress -InterfaceIndex %1 -IPAddress %2 -Confirm:$false"
-				  " -ErrorAction SilentlyContinue")
-			  .arg(P().wiredIdx).arg(P().ip));
-	runPS(QString("Set-NetIPInterface -InterfaceIndex %1 -Dhcp Enabled -ErrorAction SilentlyContinue")
-			  .arg(P().wiredIdx));
-	runPS(QString("Set-DnsClientServerAddress -InterfaceIndex %1 -ResetServerAddresses").arg(P().wiredIdx));
-	runPS(QString("Set-NetIPInterface -InterfaceIndex %1 -AutomaticMetric Enabled -ErrorAction SilentlyContinue")
-			  .arg(P().wlanIdx));
-	runPS(QString("Get-NetAdapter -InterfaceIndex %1 | Restart-NetAdapter").arg(P().wiredIdx));
-
+	// 先清标记保证幂等（退出流程可能触发两次 QuitDrcom）
 	QSettings s(SETTINGS_FILE_NAME);
+	if (!s.value(ID_DIRECT_ACTIVE, false).toBool()) {
+		qDebug() << "[DirectMode] restore: not active, skip";
+		return true;
+	}
 	s.setValue(ID_DIRECT_ACTIVE, false);
-	qDebug() << "[DirectMode] restore: done";
-	return true;
+
+	const QString script = writeRestoreScript();
+	QProcess p;
+	p.start("powershell", QStringList{"-NoProfile", "-ExecutionPolicy", "Bypass", "-File", script});
+	if (!p.waitForStarted(5000)) {
+		qDebug() << "[DirectMode] restore: powershell failed to start";
+		return false;
+	}
+	p.waitForFinished(60000);
+	qDebug() << "[DirectMode] restore: done, exit" << p.exitCode()
+			 << "(输出见 %TEMP%\\drcom-direct-restore.log)";
+	return p.exitCode() == 0;
+}
+
+bool DirectMode::restoreAsync()
+{
+	// 先清标记保证幂等；就算后台还原进程被杀，用户也能用
+	// scripts/laptop-direct.ps1 restore 手工兜底
+	QSettings s(SETTINGS_FILE_NAME);
+	if (!s.value(ID_DIRECT_ACTIVE, false).toBool())
+		return false;
+	s.setValue(ID_DIRECT_ACTIVE, false);
+
+	const QString script = writeRestoreScript();
+	qint64 pid = 0;
+	const bool ok = QProcess::startDetached(
+		"powershell",
+		QStringList{"-NoProfile", "-ExecutionPolicy", "Bypass", "-File", script},
+		QCoreApplication::applicationDirPath(), &pid);
+	qDebug() << "[DirectMode] restoreAsync: detached ok=" << ok << "pid=" << pid
+			 << "- restoring in background, log: %TEMP%\\drcom-direct-restore.log";
+	return ok;
 }

@@ -12,8 +12,15 @@ DogcomController::DogcomController()
 }
 
 DogcomController::~DogcomController(){
+	// 线程可能还在 challenge/keepalive 里跑着（退出时机不固定）：
+	// 先中断再等它退出，直接 delete 运行中的 QThread 会触发
+	// "QThread: Destroyed while thread is still running" fatal
+	if(dogcom!=nullptr){
+		dogcom->Stop();
+		dogcom->wait(5000);
+		delete dogcom;
+	}
 	if(sleeper!=nullptr) delete sleeper;
-	if(dogcom!=nullptr) delete dogcom;
 }
 
 void DogcomController::Login(const QString &account, const QString &password, const QString &mac_addr) {

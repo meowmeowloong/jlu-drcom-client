@@ -1,6 +1,8 @@
 ﻿#ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
+#include <QFutureWatcher>
+
 #include <QDialog>
 #include <QSettings>
 #include <QRegularExpressionValidator>
@@ -63,6 +65,10 @@ private:
 
     QValidator *macValidator;
 	DogcomController *dogcomController;
+
+	// 直连模式登录时的后台接管任务（v1.0.0.9）：退出时要防它半途而废
+	QFutureWatcher<bool> *m_takeoverWatcher = nullptr;
+	bool m_quitDuringTakeover = false;   // 接管进行中用户请求了退出：完成后自动还原再退
 
 	// 设置托盘中的注销按钮的可用性
 	void DisableLogOutButton(bool yes);

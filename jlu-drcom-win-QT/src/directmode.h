@@ -24,8 +24,13 @@ bool relaunchElevated();
 bool takeover();
 
 // 还原网络配置（幂等）：逆序撤销 takeover 的一切，清除 directActive 标记。
-// 需要管理员权限。
+// 需要管理员权限。整个还原在**一个** PowerShell 进程里跑完，同步等待结束。
 bool restore();
+
+// restore 的异步版：立即清除 directActive 标记，把还原丢给一个后台 PowerShell
+// 进程后马上返回，调用方（退出流程）不用等十几秒。输出记到
+// %TEMP%\drcom-direct-restore.log。需要管理员权限（在提权进程里调用）。
+bool restoreAsync();
 
 } // namespace DirectMode
 

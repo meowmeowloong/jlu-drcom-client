@@ -94,5 +94,6 @@ windeployqt --release release/DrCOM_JLU_Qt.exe
 | `bind failed. Error code: 10013` | UDP 61440 被 Hyper-V/WSL 动态保留。管理员执行 `netsh int ipv4 add excludedportrange protocol=udp startport=61440 numberofports=1 store=persistent` 永久占住 |
 | 直连模式下 challenge 无响应 | ① 认证包走了别的网卡（确认 `direct/*` 参数与 `/32` 路由）；② 网线没插墙口；③ 与路由器同时在线冲突 |
 | 启动后无日志无反应 | 有一个旧实例占着单实例主位（托盘里找找），或程序目录无写权限 |
+| ~~退出卡六七秒、界面托盘无响应~~ 已修复（v1.0.0.9） | 旧版退出时在主线程串行跑 7 个 PowerShell + 死等 6 秒做网络还原。现在还原合并为**单个** PowerShell 后台进程（窗口先隐藏，实测 1 秒内退出），还原输出在 `%TEMP%\drcom-direct-restore.log`；登录时的网卡接管同理挪到后台线程，等网卡从死等 12 秒改为轮询 |
 
 协议细节见仓库根目录 [jlu-drcom-protocol.md](../jlu-drcom-protocol.md)。

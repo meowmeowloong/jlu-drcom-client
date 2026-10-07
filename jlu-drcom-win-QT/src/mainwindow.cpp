@@ -17,6 +17,7 @@
 #include <QCloseEvent>
 #include <QProcess>
 #include <QTimer>
+#include <QtConcurrent>
 
 #include "encrypt/EncryptData.h"
 
@@ -178,10 +179,22 @@ void MainWindow::RestartDrcom()
 
 void MainWindow::QuitDrcom()
 {
-	// 直连模式：退出前把网络配置还原（有标记才执行，幂等）
+	// 接管还在后台进行中就请求退出：先隐藏窗口，等接管完成后自动还原再真正退出。
+	// 直接硬退会让网络停在"改了一半"的状态。
+	if (m_takeoverWatcher && m_takeoverWatcher->isRunning()) {
+		qDebug() << "quit requested during takeover: window hidden, will restore and quit after it finishes";
+		hide();
+		m_quitDuringTakeover = true;
+		return;
+	}
+
+	// 直连模式：退出前把网络配置还原（有标记才执行，幂等）。
+	// v1.0.0.9：先隐藏窗口，还原丢给后台 PowerShell 进程——旧版在主线程串行跑
+	// 7 个 powershell + 死等 6 秒，退出时界面卡六七秒、点托盘没反应。
 	if (QSettings(SETTINGS_FILE_NAME).value(ID_DIRECT_ACTIVE, false).toBool()) {
-		qDebug() << "direct mode was active, restoring network config on quit...";
-		DirectMode::restore();
+		qDebug() << "direct mode was active, hiding window and restoring network in background...";
+		hide();
+		DirectMode::restoreAsync();
 	}
 
 	// 退出之前恢复重试计数
@@ -376,8 +389,41 @@ void MainWindow::on_pushButtonLogin_clicked()
 			CURR_STATE = STATE_OFFLINE;
 			return;
 		}
-		qDebug() << "direct mode on, taking over campus identity before login...";
-		DirectMode::takeover();
+		qDebug() << "direct mode on, taking over campus identity in background thread...";
+		// v1.0.0.9：接管挪到后台线程。克隆 MAC + 配 IP 要等十几秒，
+		// 旧版直接在主线程调 takeover()，登录时界面冻结、托盘无响应。
+		ui->pushButtonLogin->setText("配置网卡中...");
+		QApplication::setOverrideCursor(Qt::WaitCursor);
+		m_takeoverWatcher = new QFutureWatcher<bool>(this);
+		connect(m_takeoverWatcher, &QFutureWatcher<bool>::finished, this, [this]() {
+			const bool ok = m_takeoverWatcher->result();
+			m_takeoverWatcher->deleteLater();
+			m_takeoverWatcher = nullptr;
+			QApplication::restoreOverrideCursor();
+			ui->pushButtonLogin->setText("Login");
+
+			// 接管期间用户请求了退出：此刻接管已完成（directActive 已置位），
+			// 走正常退出流程（它会做后台还原）
+			if (m_quitDuringTakeover) {
+				m_quitDuringTakeover = false;
+				qDebug() << "deferred quit after takeover finished";
+				CURR_STATE = STATE_OFFLINE;
+				QuitDrcom();
+				return;
+			}
+
+			if (!ok) {
+				qWarning() << "direct mode takeover failed";
+				SetDisableInput(false);
+				CURR_STATE = STATE_OFFLINE;
+				QMessageBox::warning(this, APP_NAME, "直连模式接管失败！\n详情见程序目录 logs/ 日志。");
+				return;
+			}
+			qDebug() << "takeover done, starting login...";
+			dogcomController->Login(account, password, mac_addr);
+		});
+		m_takeoverWatcher->setFuture(QtConcurrent::run([]() { return DirectMode::takeover(); }));
+		return;
 	}
 
 	dogcomController->Login(account, password, mac_addr);

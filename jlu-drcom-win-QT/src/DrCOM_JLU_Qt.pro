@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui network widgets
+QT       += core gui network widgets concurrent
 # 自定义 rc：图标 + requireAdministrator 清单（直连模式需要管理员权限，双击即静默提权）
 RC_FILE  = app.rc
 
@@ -70,7 +70,7 @@ RESOURCES += \
 include(singleinstance/singleapplication.pri)
 DEFINES += QAPPLICATION_CLASS=QApplication
 
-VERSION = 1.0.0.8
+VERSION = 1.0.0.9
 
 win32:LIBS += -lwsock32
 win32:LIBS += -lcrypt32
@@ -92,3 +92,6 @@ win32:LIBS += -lole32
 #           崩溃残留下次启动自动清理。用于宿舍有线静态分配网+路由器断电场景，免外部脚本
 # v 1.0.0.8 直连参数改为登录窗口内直接填写（IP/掩码/网关/DNS/网卡号），不再需要改注册表；
 #           掩码位数可配；其余不变
+# v 1.0.0.9 修复退出卡顿六七秒：网络还原合并为单个 PowerShell 进程并放到后台执行
+#           （窗口先隐藏，体感秒退；还原日志在 %TEMP%\drcom-direct-restore.log）；
+#           登录时的网卡接管挪到后台线程，界面不再冻结十几秒；等网卡改成轮询不再死等
